@@ -1,0 +1,2 @@
+# Optional test dependency; the desktop app uses only the Python standard library.
+lupa==2.8

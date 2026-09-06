@@ -1,0 +1,53 @@
+test_api_loop_carries_reasoning_and_tool_result (test_agent.AgentTests.test_api_loop_carries_reasoning_and_tool_result) ... ok
+test_cancelled_response_cannot_apply_tools (test_agent.AgentTests.test_cancelled_response_cannot_apply_tools) ... ok
+test_failure_after_mutation_reports_partial_execution (test_agent.AgentTests.test_failure_after_mutation_reports_partial_execution) ... ok
+test_shipped_lua_adapter_boot_read_export_routine_and_undo (test_bizhawk_adapter.AdapterTests.test_shipped_lua_adapter_boot_read_export_routine_and_undo) ... ok
+test_bounds_and_types (test_engine.EngineTests.test_bounds_and_types) ... ok
+test_conflicting_holds_rejected (test_engine.EngineTests.test_conflicting_holds_rejected) ... ok
+test_duplicate_does_not_repeat (test_engine.EngineTests.test_duplicate_does_not_repeat) ... ok
+test_expired_wrong_session_token_rom_and_epoch (test_engine.EngineTests.test_expired_wrong_session_token_rom_and_epoch) ... ok
+test_guard_rejects_before_checkpoint (test_engine.EngineTests.test_guard_rejects_before_checkpoint) ... ok
+test_hold_reapplies_and_undo_removes (test_engine.EngineTests.test_hold_reapplies_and_undo_removes) ... ok
+test_instruction_budget_stops_infinite_loop (test_engine.EngineTests.test_instruction_budget_stops_infinite_loop) ... ok
+test_invalidate_clears_effects_and_undo (test_engine.EngineTests.test_invalidate_clears_effects_and_undo) ... ok
+test_missing_and_duplicate_expected (test_engine.EngineTests.test_missing_and_duplicate_expected) ... ok
+test_patch_and_full_undo (test_engine.EngineTests.test_patch_and_full_undo) ... ok
+test_retains_eight_checkpoints (test_engine.EngineTests.test_retains_eight_checkpoints) ... ok
+test_routine_duration_and_state (test_engine.EngineTests.test_routine_duration_and_state) ... ok
+test_routine_failed_assert_does_not_commit_partial_writes (test_engine.EngineTests.test_routine_failed_assert_does_not_commit_partial_writes) ... ok
+test_routine_reads_staged_bytes (test_engine.EngineTests.test_routine_reads_staged_bytes) ... ok
+test_running_routine_error_disables_it (test_engine.EngineTests.test_running_routine_error_disables_it) ... ok
+test_sandbox_has_no_host_escape_capabilities (test_engine.EngineTests.test_sandbox_has_no_host_escape_capabilities) ... ok
+test_smw_five_independent_initialized_chucks (test_engine.EngineTests.test_smw_five_independent_initialized_chucks) ... ok
+test_smw_scene_and_slot_guards (test_engine.EngineTests.test_smw_scene_and_slot_guards) ... ok
+test_state_size_cycle_and_function_rejected (test_engine.EngineTests.test_state_size_cycle_and_function_rejected) ... ok
+test_unknown_rom_still_supports_generated_routine (test_engine.EngineTests.test_unknown_rom_still_supports_generated_routine) ... ok
+test_write_failure_rolls_back_whole_transaction (test_engine.EngineTests.test_write_failure_rolls_back_whole_transaction) ... ok
+test_cancel_and_failed_source_restore_without_undo (test_investigation.ExperimentsTests.test_cancel_and_failed_source_restore_without_undo) ... ok
+test_cartridge_changes_disable_verified_layout_shortcuts (test_investigation.ExperimentsTests.test_cartridge_changes_disable_verified_layout_shortcuts) ... ok
+test_cartridge_partial_failure_and_expected_guards (test_investigation.ExperimentsTests.test_cartridge_partial_failure_and_expected_guards) ... ok
+test_cartridge_patches_have_independent_rollback (test_investigation.ExperimentsTests.test_cartridge_patches_have_independent_rollback) ... ok
+test_checkpoint_cleanup_and_rom_switch_do_not_write_old_rom (test_investigation.ExperimentsTests.test_checkpoint_cleanup_and_rom_switch_do_not_write_old_rom) ... ok
+test_experiment_cartridge_overlay_and_checkpoint_restore (test_investigation.ExperimentsTests.test_experiment_cartridge_overlay_and_checkpoint_restore) ... ok
+test_failed_experiment_restore_retains_state_for_retry (test_investigation.ExperimentsTests.test_failed_experiment_restore_retains_state_for_retry) ... ok
+test_hardware_read_and_checkpoint_diff (test_investigation.ExperimentsTests.test_hardware_read_and_checkpoint_diff) ... ok
+test_repeatable_branch_restores_player_state_and_effects (test_investigation.ExperimentsTests.test_repeatable_branch_restores_player_state_and_effects) ... ok
+test_budget_pause_resumes_without_replaying_mutation_after_restart (test_investigation.KnowledgeTests.test_budget_pause_resumes_without_replaying_mutation_after_restart) ... ok
+test_context_trimming_keeps_goal_and_complete_tool_pairs (test_investigation.KnowledgeTests.test_context_trimming_keeps_goal_and_complete_tool_pairs) ... ok
+test_large_source_retrieval_and_evidence_persist_per_rom (test_investigation.KnowledgeTests.test_large_source_retrieval_and_evidence_persist_per_rom) ... ok
+test_absolute_windows_path_with_spaces (test_launcher.LauncherTests.test_absolute_windows_path_with_spaces) ... ok
+test_bare_filename_uses_script_working_directory (test_launcher.LauncherTests.test_bare_filename_uses_script_working_directory) ... ok
+test_bizhawk_main_chunk_uses_script_working_directory (test_launcher.LauncherTests.test_bizhawk_main_chunk_uses_script_working_directory) ... ok
+test_missing_companion_files_explains_extraction (test_launcher.LauncherTests.test_missing_companion_files_explains_extraction) ... ok
+test_cartridge_search_overlapping (test_memory.MemoryTests.test_cartridge_search_overlapping) ... ok
+test_scan_includes_unaligned_multibyte_and_end (test_memory.MemoryTests.test_scan_includes_unaligned_multibyte_and_end) ... ok
+test_scan_refines_and_requires_same_game (test_memory.MemoryTests.test_scan_refines_and_requires_same_game) ... ok
+test_wram_address_normalization (test_memory.MemoryTests.test_wram_address_normalization) ... ok
+test_context_experiment_live_application_undo_and_cartridge_cache (test_toolbox.ToolboxTests.test_context_experiment_live_application_undo_and_cartridge_cache) ... ok
+test_real_file_protocol_with_lua_mutation_and_undo (test_transport.TransportTests.test_real_file_protocol_with_lua_mutation_and_undo) ... ok
+test_timeout_removes_unconsumed_request (test_transport.TransportTests.test_timeout_removes_unconsumed_request) ... ok
+
+----------------------------------------------------------------------
+Ran 48 tests in 3.223s
+
+OK

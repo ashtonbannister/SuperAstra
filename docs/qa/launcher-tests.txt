@@ -1,0 +1,9 @@
+test_absolute_windows_path_with_spaces (test_launcher.LauncherTests.test_absolute_windows_path_with_spaces) ... ok
+test_bare_filename_uses_script_working_directory (test_launcher.LauncherTests.test_bare_filename_uses_script_working_directory) ... ok
+test_bizhawk_main_chunk_uses_script_working_directory (test_launcher.LauncherTests.test_bizhawk_main_chunk_uses_script_working_directory) ... ok
+test_missing_companion_files_explains_extraction (test_launcher.LauncherTests.test_missing_companion_files_explains_extraction) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+OK

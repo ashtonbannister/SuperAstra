@@ -1,0 +1,38 @@
+{
+  "core": "Snes9x",
+  "version": "1.63 890b5d4",
+  "rom_sha1": "7265176858DD9E0C905D4DDC69060E173A23BADD",
+  "adapter": "Actual Lua command engine connected to live Snes9x WRAM/save states through the test API adapter",
+  "checks": [
+    {
+      "name": "Star initialized, fell, and was collected",
+      "passed": true,
+      "star_timer": 253
+    },
+    {
+      "name": "Undo restored the complete pre-command WRAM",
+      "passed": true
+    },
+    {
+      "name": "Five Chucks initialized and remained active after 36 frames",
+      "passed": true,
+      "slots": [
+        8,
+        7,
+        6,
+        5,
+        4
+      ]
+    },
+    {
+      "name": "New conditional Lua routine changed powerup when the coin counter increased",
+      "passed": true,
+      "setup": "The coin-counter increase was injected as a test input; no claim of a physical coin pickup in this check."
+    },
+    {
+      "name": "Two 30-frame checkpoint experiments produced identical observed results and restored the pre-experiment WRAM and frame",
+      "passed": true,
+      "setup": "Generic experiment tool with one-shot Lua setting a known powerup field; no live API call used."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Super Mario World (USA)",
+  "rom_sha1": ["6B47BB75D16514B6A476AA0C73A683A2A4C18765", "7265176858DD9E0C905D4DDC69060E173A23BADD"],
+  "notes": "Second hash is the specific Ice Flower build tested with this add-on. Other hacks and regions require a checked profile. Mario's life counter stores displayed lives minus one.",
+  "fields": {
+    "powerup": {"address": "7E0019", "width": 1, "min": 0, "max": 3, "description": "0 small, 1 big, 2 cape, 3 fire (ice in the Ice Flower build)"},
+    "lives_minus_one": {"address": "7E0DBE", "width": 1, "min": 0, "max": 98, "description": "Displayed lives minus one; use 98 for 99 lives"},
+    "coins": {"address": "7E0DBF", "width": 1, "min": 0, "max": 99, "description": "Current coin counter"}
+  }
+}
