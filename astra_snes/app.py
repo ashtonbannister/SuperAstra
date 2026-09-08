@@ -7,7 +7,8 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-from .agent import AstraAgent
+from .agent import AstraAgent, INSTRUCTIONS
+from .codex_agent import CodexAgent
 from .toolbox import Toolbox
 from .transport import Bridge, ROOT
 
@@ -27,7 +28,11 @@ class App:
         self.bridge = Bridge()
         self.toolbox = Toolbox(self.bridge, self.progress)
         self.agent = AstraAgent(self.toolbox, progress=self.progress)
-        self.mode = tk.StringVar(value="Astra")
+        self.codex = CodexAgent(self.bridge, INSTRUCTIONS, progress=self.progress)
+        self.mode = tk.StringVar(value="Codex")
+        self.running_mode = None
+        self._work_speaker = "Codex"
+        self._closing = False
         self.status = tk.StringVar(value="NO CARTRIDGE CONNECTED")
         self.activity = tk.StringVar(value="Ready when you are.")
         from tkinter import font as tkfont
@@ -102,8 +107,11 @@ class App:
 
         modes = ttk.Frame(outer)
         modes.pack(fill="x", pady=(0, 10))
-        ttk.Radiobutton(modes, text="ASTRA", variable=self.mode, value="Astra").pack(side="left")
-        ttk.Radiobutton(modes, text="LOCAL SHORTCUTS", variable=self.mode, value="Local").pack(side="left", padx=(24, 0))
+        self.backend_buttons = []
+        for label, value in (("CODEX / CHATGPT", "Codex"), ("OPENAI API", "Astra"), ("LOCAL SHORTCUTS", "Local")):
+            button = ttk.Radiobutton(modes, text=label, variable=self.mode, value=value)
+            button.pack(side="left", padx=(0, 16))
+            self.backend_buttons.append(button)
         ttk.Label(modes, text="CTRL + ENTER TO CAST", foreground=MUTED, font=(mono, 9)).pack(side="right", padx=(0, 4))
 
         prompt_frame, prompt_inner = panel(outer)
@@ -159,7 +167,7 @@ class App:
         self.transcript.pack(side="left", fill="both", expand=True)
         self.transcript.tag_configure("you", foreground=ACCENT, font=(mono, 10, "bold"))
         self.transcript.tag_configure("detail", foreground="#c6b3fc", font=(mono, 10, "bold"))
-        self.log("Astra", "What would you like to change?")
+        self.log("SuperAstra", "What would you like to change? Codex mode uses ChatGPT sign-in in Settings.")
         self.footer = ttk.Label(outer, textvariable=self.activity, foreground=MUTED,
                                font=(mono, 9), wraplength=850)
         self.footer.pack(anchor="w", pady=(10, 0))
@@ -188,11 +196,15 @@ class App:
         self.prompt.insert("1.0", prompt)
         self.prompt.focus_set()
 
-    def work(self, fn):
-        if self.busy:
+    def work(self, fn, backend=None):
+        if self.busy or self._closing:
             return
         self.busy = True
+        self.running_mode = backend or self.mode.get()
+        self._work_speaker = {"Codex": "Codex", "Astra": "Astra / API", "Local": "Local command"}[self.running_mode]
         self.send_button.configure(state="disabled")
+        for button in self.backend_buttons:
+            button.configure(state="disabled")
         def run():
             try:
                 result = fn()
@@ -212,12 +224,20 @@ class App:
         self.log("You", prompt)
         mode = self.mode.get()
         self.agent.cancel.clear()
-        self.work(lambda: self.agent.run(prompt, max_rounds=self.max_rounds) if mode == "Astra" else self.toolbox.local(prompt))
+        self.codex.cancel.clear()
+        if mode == "Codex":
+            self.work(lambda: self.codex.run(prompt, max_rounds=self.max_rounds))
+        elif mode == "Astra":
+            self.work(lambda: self.agent.run(prompt, max_rounds=self.max_rounds))
+        else:
+            self.work(lambda: self.toolbox.local(prompt))
 
     def resume(self):
         if self.busy:
             return
-        self.mode.set("Astra")
+        if self.mode.get() == "Local":
+            self.activity.set("Select Codex / ChatGPT or OpenAI API before resuming an investigation.")
+            return
         self.fill("Continue")
         self.send()
 
@@ -232,21 +252,18 @@ class App:
 
     def action(self, name: str, args: dict):
         if self.busy:
-            self.agent.cancel.set()
-            def interrupt_effects():
-                try:
-                    result = self.bridge.rpc("undo" if name == "undo" else "stop_holds", args)
-                    self.events.put(("answer", result["message"]))
-                except Exception as e:
-                    self.events.put(("error", str(e)))
-            threading.Thread(target=interrupt_effects, daemon=True).start()
+            self.activity.set("Stop the current task and wait for it to finish, then retry Undo / Stop Effects.")
             return
         self.agent.cancel.clear()
-        self.work(lambda: (self.toolbox.begin(), self.toolbox.dispatch(name, args))[1])
+        self.work(lambda: (self.toolbox.begin(), self.toolbox.dispatch(name, args))[1], backend="Local")
 
     def cancel(self):
-        self.agent.cancel.set()
-        self.activity.set("Stopping before the next tool. Current API request may still be in flight.")
+        if self.running_mode == "Codex":
+            self.codex.cancel.set()
+            self.activity.set("Stopping Codex. Waiting for the current emulator operation to settle; changes are not undone.")
+        else:
+            self.agent.cancel.set()
+            self.activity.set("Stopping before the next tool. Current API request may still be in flight.")
 
     def drain(self):
         while True:
@@ -256,16 +273,19 @@ class App:
                 break
             if kind == "progress":
                 self.activity.set(message)
-                if message.startswith(("Astra →", "Spawned", "Executed", "Applied", "Tool result:")):
+                if message.startswith(("Codex →", "Astra →", "Spawned", "Executed", "Applied", "Tool result:")):
                     self.log("Activity", message)
             elif kind == "answer":
-                self.log("Astra" if self.mode.get() == "Astra" else "Local command", message)
+                self.log(self._work_speaker, message)
             elif kind == "error":
                 self.log("Could not complete", message)
                 self.activity.set("Check the session message above.")
             elif kind == "done":
                 self.busy = False
+                self.running_mode = None
                 self.send_button.configure(state="normal")
+                for button in self.backend_buttons:
+                    button.configure(state="normal")
         self.root.after(100, self.drain)
 
     def poll(self):
@@ -279,45 +299,83 @@ class App:
         self.root.after(1000, self.poll)
 
     def settings(self):
+        if self.busy or self._closing:
+            self.activity.set("Wait for the current task to finish before changing settings.")
+            return
         dialog = tk.Toplevel(self.root)
         dialog.title("SUPERASTRA / Settings")
         dialog.configure(bg=BG)
         dialog.transient(self.root)
-        dialog.geometry("+" + str(self.root.winfo_rootx() + 100) + "+" + str(self.root.winfo_rooty() + 100))
-        frame = ttk.Frame(dialog, padding=22)
-        frame.pack(fill="both", expand=True)
-        ttk.Label(frame, text="OpenAI API key").pack(anchor="w")
-        key = ttk.Entry(frame, width=56, show="*")
-        key.insert(0, self.agent.api_key)
-        key.pack(fill="x", pady=(6, 14))
-        ttk.Label(frame, text="Model").pack(anchor="w")
-        model = ttk.Entry(frame, width=56)
-        model.insert(0, self.agent.model)
-        model.pack(fill="x", pady=(6, 14))
+        tabs = ttk.Notebook(dialog)
+        tabs.pack(fill="both", expand=True, padx=18, pady=18)
+        codex_frame, api_frame = ttk.Frame(tabs, padding=18), ttk.Frame(tabs, padding=18)
+        tabs.add(codex_frame, text="Codex / ChatGPT")
+        tabs.add(api_frame, text="OpenAI API (separate billing)")
+
+        def entry(parent, label, value, hidden=False):
+            ttk.Label(parent, text=label).pack(anchor="w")
+            widget = ttk.Entry(parent, width=62, show="*" if hidden else "")
+            widget.insert(0, str(value))
+            widget.pack(fill="x", pady=(4, 12))
+            return widget
+
+        cli = entry(codex_frame, "Codex executable (blank = find installed Codex; no command-line flags)", self.codex.executable)
+        codex_model = entry(codex_frame, "Codex model", self.codex.model)
+        minutes = entry(codex_frame, "Maximum minutes per Codex request (1-120)", int(self.codex.timeout / 60))
+        ttk.Label(codex_frame, text="Type in this window; Codex CLI runs in the background.\n"
+                  "Sign-in uses a separate SuperAstra Codex profile, even if your regular Codex is logged in.\n"
+                  "No API-key fallback. Shell execution, apps, hooks and web search are disabled.\n"
+                  "Prompts, selected game data and screenshots still go to OpenAI through Codex.\n"
+                  "Codex keeps its own credentials and conversation history in the profile below:",
+                  foreground=MUTED, wraplength=520, justify="left").pack(anchor="w", pady=(0, 8))
+        ttk.Label(codex_frame, text=str(self.codex.home), foreground=MUTED, wraplength=520).pack(anchor="w")
+
+        key = entry(api_frame, "OpenAI API key (held in this app's memory only)", self.agent.api_key, hidden=True)
+        model = entry(api_frame, "API model", self.agent.model)
         search = tk.BooleanVar(value=self.agent.web_search)
-        ttk.Checkbutton(frame, text="Let Astra research game documentation on the web", variable=search).pack(anchor="w")
-        ttk.Label(frame, text="Investigation steps per request (1-256; progress is saved)").pack(anchor="w", pady=(12, 4))
-        steps = ttk.Entry(frame, width=8)
-        steps.insert(0, str(self.max_rounds))
-        steps.pack(anchor="w")
-        ttk.Label(frame, text="The key stays in this app's memory. API usage is billed to your OpenAI project.\nPrompts, screenshots, requested memory/code windows and game notes go to the API.\nFull cartridge and RAM dumps are indexed locally.",
-                  foreground=MUTED, wraplength=510, justify="left").pack(anchor="w", pady=14)
-        def apply():
-            if self.busy:
-                messagebox.showinfo("Command running", "Wait for the current command to finish before changing the connection.")
-                return
-            self.agent.api_key, self.agent.model = key.get().strip(), model.get().strip() or "gpt-6-astra"
+        ttk.Checkbutton(api_frame, text="Let the API backend research game documentation on the web", variable=search).pack(anchor="w")
+        ttk.Label(api_frame, text="API mode is billed separately to your OpenAI project.\n"
+                  "It is never automatically selected when Codex fails or reaches a usage limit.",
+                  foreground=MUTED, wraplength=520).pack(anchor="w", pady=12)
+        footer = ttk.Frame(dialog, padding=(18, 0, 18, 18))
+        footer.pack(fill="x")
+        steps = entry(footer, "Request budget: Codex MCP calls / API rounds (1-256)", self.max_rounds)
+
+        def apply_values():
+            if self.busy or self._closing:
+                return False
             try:
-                budget = int(steps.get())
-                if not 1 <= budget <= 256:
+                budget, duration = int(steps.get()), int(minutes.get())
+                if not 1 <= budget <= 256 or not 1 <= duration <= 120:
                     raise ValueError()
             except ValueError:
-                messagebox.showerror("Step limit", "Enter a whole number from 1 to 256.")
-                return
+                messagebox.showerror("Request limits", "Use 1-256 steps and 1-120 minutes.", parent=dialog)
+                return False
             self.max_rounds = budget
+            self.codex.executable = cli.get().strip()
+            self.codex.model = codex_model.get().strip() or "gpt-6-astra"
+            self.codex.timeout = duration * 60
+            self.agent.api_key = key.get().strip()
+            self.agent.model = model.get().strip() or "gpt-6-astra"
             self.agent.web_search = search.get()
-            dialog.destroy()
-        ttk.Button(frame, text="Use connection", command=apply, style="Accent.TButton").pack(anchor="e")
+            return True
+
+        def codex_action(operation):
+            if apply_values():
+                self.codex.cancel.clear()
+                dialog.destroy()
+                self.work(operation, backend="Codex")
+
+        actions = ttk.Frame(codex_frame)
+        actions.pack(fill="x", pady=(16, 0))
+        ttk.Button(actions, text="Sign in with ChatGPT", command=lambda: codex_action(self.codex.login)).pack(side="left")
+        ttk.Button(actions, text="Check sign-in", command=lambda: codex_action(self.codex.check_login)).pack(side="left", padx=8)
+        ttk.Button(codex_frame, text="New Codex conversations", command=lambda: codex_action(self.codex.reset_threads)).pack(anchor="w", pady=(8, 0))
+
+        def apply():
+            if apply_values():
+                dialog.destroy()
+        ttk.Button(footer, text="Apply settings", command=apply, style="Accent.TButton").pack(anchor="e")
 
     def import_context(self):
         if self.busy:
@@ -339,8 +397,17 @@ class App:
         self.work(load)
 
     def close(self):
-        self.agent.cancel.set()
-        self.root.destroy()
+        if self._closing:
+            return
+        self._closing = True
+        self.cancel()
+        self._wait_for_close()
+
+    def _wait_for_close(self):
+        if self.busy:
+            self.root.after(100, self._wait_for_close)
+        else:
+            self.root.destroy()
 
 
 def main():
