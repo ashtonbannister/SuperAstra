@@ -91,7 +91,7 @@ def test_clean_environment_is_allowlist():
         "OPENAI_BASE_URL": "https://invalid.test", "NODE_OPTIONS": "--require bad",
         "PYTHONPATH": "/untrusted", "MY_PASSWORD": "fake-password", "CODEX_HOME": "/other",
     })
-    assert env["CODEX_HOME"] == "/private"
+    assert env["CODEX_HOME"] == str(Path("/private"))
     assert env["SystemRoot"] == r"C:\Windows"
     for key in ("OPENAI_API_KEY", "CODEX_API_KEY", "CODEX_ACCESS_TOKEN", "OPENAI_BASE_URL",
                 "NODE_OPTIONS", "PYTHONPATH", "MY_PASSWORD"):

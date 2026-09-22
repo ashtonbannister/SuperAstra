@@ -1,3 +1,10 @@
+# Windows project setup
+
+Use the project virtual environment when launching from `Start-Windows.cmd`,
+so the Codex/MCP backend runs with the installed Python and dependencies. Enable
+UTF-8 mode for Windows console diagnostics. Make the Codex environment test
+expect the host platform's path format and ignore local build files.
+
 # v0.3.2 — GitHub preparation
 
 Shortened the tagline to "Change the game." Refreshed the README and desktop
