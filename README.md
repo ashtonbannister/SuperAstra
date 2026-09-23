@@ -6,6 +6,15 @@ A SNES-themed desktop companion that lets Astra investigate and alter a running
 game through natural-language prompts. Built for BizHawk, with an RPG-style
 interface and live memory tools.
 
+### Knowledge highlights
+**View game knowledge** opens a searchable list of saved findings, confidence
+labels, working notes, routines and references for the connected ROM. Select a
+highlight to read its full evidence, or select several with Ctrl / Shift.
+**Add to prompt** appends the selected records and ROM identity to your current
+draft. Add your follow-up and send it when ready. This does not execute saved
+routines or apply modifications. Saved confidence labels describe prior evidence,
+not necessarily the current emulator state.
+
 ### Finding tools
 The left sidebar groups **Assistant**, **Game controls**, and **Knowledge**.
 Use **Settings / Model / Sign-in** for the Codex executable, account and model.

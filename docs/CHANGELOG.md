@@ -1,3 +1,19 @@
+# Knowledge highlights and follow-up prompts
+
+Replace the Game Knowledge raw JSON log output with a searchable selection window.
+Show all retained findings, confidence and evidence, working notes, routines and
+reference metadata from the existing notebook. Add selected records and exact ROM
+identity to an editable prompt without sending it. Preserve the existing draft.
+The notebook remains the sole storage authority; no migration or new persisted
+schema. The old raw-dump UI route is removed; the bounded notebook summary remains
+in use by agent context. Reverting restores the old display without data changes.
+Built on mcp-codex 3104b4d; user-local Codex approval configuration is excluded.
+Windows Tk verification: 14 tests passed, one temporary display skip; that skipped
+selection/filter/prompt test passed on its targeted rerun. All 15 UI tests therefore
+ran successfully. Tests use fake backends, including full-notebook retrieval beyond
+the 16-finding agent summary. No live game mutations. Encoding and diff checks
+passed. Visual acceptance remains for user review after reopening the GUI.
+
 # SNES tool navigation
 
 Group existing controls in a persistent left sidebar: Assistant, Game controls,

@@ -216,3 +216,53 @@ def test_model_dropdown_uses_signed_in_catalog_and_selection(ui):
     apply_buttons[0].invoke()
     assert app.codex.model == "gpt-6-sol"
     assert calls == []
+
+def test_knowledge_filters_and_builds_prompt_without_execution(ui):
+    from astra_snes.knowledge_ui import show_knowledge
+    from tkinter import ttk
+    app, calls = ui
+    data = {"rom_sha1": "A" * 40, "findings": [
+        {"finding": "Palette at 07CD88", "evidence": "Color readback", "confidence": "verified"},
+        {"finding": "Candidate speed limit", "evidence": "Motion unverified", "confidence": "observed"}]}
+    app.fill("Please investigate further")
+    window = show_knowledge(app.root, data, app.add_knowledge_context)
+    def walk(w):
+        for child in w.winfo_children():
+            yield child
+            yield from walk(child)
+    widgets = list(walk(window))
+    table = next(w for w in widgets if isinstance(w, ttk.Treeview))
+    entry = next(w for w in widgets if isinstance(w, ttk.Entry))
+    button = next(w for w in widgets if isinstance(w, ttk.Button) and w.cget("text") == "Add to prompt")
+    assert len(table.get_children()) == 2
+    entry.insert(0, "Motion")
+    app.root.update()
+    assert len(table.get_children()) == 1
+    table.selection_set(table.get_children()[0])
+    table.event_generate("<<TreeviewSelect>>")
+    app.root.update()
+    button.invoke()
+    prompt = app.prompt.get("1.0", "end")
+    assert prompt.startswith("Please investigate further")
+    assert "[Observed]" in prompt and "Motion unverified" in prompt
+    assert "A" * 40 in prompt and "Confirm the loaded ROM matches" in prompt
+    assert "Palette at" not in prompt
+    assert calls == [] and not app.busy
+
+
+def test_knowledge_reads_full_notebook_without_log_dump(ui):
+    app, calls = ui
+    app.toolbox.notebook.data = {"rom_sha1": "B" * 40, "findings": [
+        {"finding": "Discovery " + str(i), "evidence": "Test", "confidence": "hypothesis"}
+        for i in range(20)]}
+    app.view_knowledge()
+    settle(app)
+    from tkinter import ttk
+    def walk(w):
+        for child in w.winfo_children():
+            yield child
+            yield from walk(child)
+    tables = [w for w in walk(app.root) if isinstance(w, ttk.Treeview)]
+    assert len(tables) == 1 and len(tables[0].get_children()) == 20
+    assert "rom_sha1" not in app.transcript.get("1.0", "end")
+    assert calls == []

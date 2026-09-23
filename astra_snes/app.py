@@ -191,7 +191,7 @@ class App:
         self.prompt.insert("1.0", prompt)
         self.prompt.focus_set()
 
-    def work(self, fn, backend=None):
+    def work(self, fn, backend=None, result_event="answer"):
         if self.busy or self._closing:
             return
         self.busy = True
@@ -203,7 +203,7 @@ class App:
         def run():
             try:
                 result = fn()
-                self.events.put(("answer", result if isinstance(result, str) else json.dumps(result, indent=2)))
+                self.events.put((result_event, result if result_event != "answer" or isinstance(result, str) else json.dumps(result, indent=2)))
             except Exception as e:
                 self.events.put(("error", str(e)))
             finally:
@@ -243,8 +243,14 @@ class App:
         def read():
             self.agent.cancel.clear()
             self.toolbox.begin()
-            return self.toolbox.notebook.summary()
-        self.work(read)
+            return dict(self.toolbox.notebook.data)
+        self.work(read, backend="Local", result_event="knowledge")
+
+    def add_knowledge_context(self, context):
+        existing = self.prompt.get("1.0", "end").strip()
+        self.fill((existing + "\n\n" if existing else "") + context +
+                  "\n\nMy follow-up: ")
+        self.activity.set("Knowledge added. Edit your follow-up, then Send prompt.")
 
     def action(self, name: str, args: dict):
         if self.busy:
@@ -271,6 +277,9 @@ class App:
                 self.activity.set(message)
                 if message.startswith(("Codex →", "Astra →", "Spawned", "Executed", "Applied", "Tool result:")):
                     self.log("Activity", message)
+            elif kind == "knowledge":
+                from .knowledge_ui import show_knowledge
+                show_knowledge(self.root, message, self.add_knowledge_context)
             elif kind == "answer":
                 self.log(self._work_speaker, message)
             elif kind == "error":
