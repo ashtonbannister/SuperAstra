@@ -1,6 +1,7 @@
 """Readable views of the existing notebook; no separate knowledge storage."""
 from __future__ import annotations
 
+import json
 import tkinter as tk
 from tkinter import ttk
 
@@ -11,6 +12,27 @@ def highlights(data):
         text = finding.get("finding", "")
         rows.append((finding.get("confidence", "hypothesis").capitalize(), text,
                      "Finding: " + text + "\n\nEvidence: " + finding.get("evidence", "")))
+    changes = data.get("changes", [])
+    for index in range(len(changes) - 1, max(-1, len(changes) - 101), -1):
+        change = changes[index]
+        tool = change.get("tool", "action")
+        args = change.get("args", {})
+        location = ""
+        if tool == "patch_cartridge" and args.get("segments"):
+            location = " @ ROM " + args["segments"][0].get("offset", "")
+        elif tool in {"apply_bytes", "freeze_bytes"} and args.get("edits"):
+            location = " @ WRAM " + args["edits"][0].get("address", "")
+        elif args.get("name"):
+            location = " " + args["name"]
+        title = "#" + str(index) + " " + tool.replace("_", " ").title() + location
+        when = "Prior bridge session" if change.get("session") else "Saved history"
+        uncertain = change.get("status") == "uncertain"
+        details = (when + " action: " + title +
+                   ("\nAcknowledgement was lost; this action may or may not have happened."
+                    if uncertain else "\nThis record may have been undone or superseded.") +
+                   " Check the current game before reuse." +
+                   "\n\nArguments:\n" + json.dumps(change.get("args", {}), ensure_ascii=False, indent=2))
+        rows.append(("Uncertain action" if uncertain else "Past action", title, details))
     working = data.get("working", {})
     for key, title in (("goal", "Current goal"), ("next_steps", "Suggested next steps"),
                        ("understanding", "Working understanding"), ("hypotheses", "Open questions"),

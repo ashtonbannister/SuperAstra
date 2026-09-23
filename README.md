@@ -136,6 +136,22 @@ per request, adjustable to 1–256 in settings or with `--steps`.
 relevant excerpts. Lexical search uses keywords, addresses and symbols. It does
 not upload an entire imported source collection automatically. **Game knowledge** displays the retained plan, recent evidence and available sources.
 
+## Reconnecting after a lost emulator bridge
+
+Successful hack actions are saved in the per-ROM notebook with their exact
+arguments, bridge session and state epoch. **View game knowledge** lists them
+as **Past action** highlights, with search and **Add to prompt**. The assistant's
+game context includes a bounded recent-action recovery summary; it can search
+older saved actions and fetch exact arguments when needed. Existing notebooks
+also recover successful actions from retained tool evidence.
+
+Reconnecting to a new Lua bridge clears its in-memory ROM patches, freezes,
+routines, Undo and checkpoints. Saved actions describe what was done before;
+they do not prove that an effect is active or that replay is safe in the
+current scene. Recheck the loaded ROM, game mode and expected bytes before
+reapplying anything. A dropped acknowledgement is saved as an **uncertain action**;
+inspect the game before repeating it. Game Knowledge does not auto-apply actions.
+
 ## Undo and ongoing effects
 
 Each committed memory mutation gets a full emulator checkpoint. **Undo** restores

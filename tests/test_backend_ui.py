@@ -266,3 +266,26 @@ def test_knowledge_reads_full_notebook_without_log_dump(ui):
     assert len(tables) == 1 and len(tables[0].get_children()) == 20
     assert "rom_sha1" not in app.transcript.get("1.0", "end")
     assert calls == []
+
+def test_knowledge_shows_saved_hack_as_past_action(ui):
+    from astra_snes.knowledge_ui import show_knowledge
+    from tkinter import ttk
+    app, calls = ui
+    data = {"rom_sha1": "A" * 40, "changes": [{
+        "tool": "patch_cartridge", "args": {"segments": [{"offset": "7A91"}]},
+        "session": "prior", "epoch": 2}]}
+    window = show_knowledge(app.root, data, app.add_knowledge_context)
+    def walk(w):
+        for child in w.winfo_children():
+            yield child
+            yield from walk(child)
+    table = next(w for w in walk(window) if isinstance(w, ttk.Treeview))
+    assert table.item(table.get_children()[0], "values")[0] == "Past action"
+    table.selection_set(table.get_children()[0])
+    table.event_generate("<<TreeviewSelect>>")
+    app.root.update()
+    button = next(w for w in walk(window) if isinstance(w, ttk.Button) and w.cget("text") == "Add to prompt")
+    button.invoke()
+    prompt = app.prompt.get("1.0", "end")
+    assert "7A91" in prompt and "may have been undone" in prompt
+    assert calls == []

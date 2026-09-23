@@ -1,3 +1,25 @@
+# Reconnect recovery from saved hack actions
+
+Index acknowledged memory, cartridge, freeze and routine actions in the existing
+ROM notebook. Label timed-out acknowledgements uncertain. Surface previous-session actions to the assistant and Game Knowledge;
+allow exact retrieval by action index. Recover older actions from retained tool
+events. Explain bridge-session loss in the GUI and guide reassessment of current
+bytes and game state. The predecessor raw-event-only recovery path is superseded
+for new actions; historical tool events remain for evidence and older notebooks.
+No automatic replay, storage migration or Lua reload. Reverting code leaves the
+optional action index harmless in the notebook. The user's local Codex approval
+configuration remains uncommitted.
+
+Checkpoint from 2875767: Windows fake-backend checks passed 85 tests with one
+temporary Tk display skip; that test passed on a targeted rerun. Three focused
+recovery tests passed. The optional Lua suite could not collect because Lupa
+is absent from the project environment. A read-only inspection of the user's
+F-Zero notebook found 25 earlier-session actions; a stale heartbeat snapshot
+reported no active effects, so live state remains unverified. No emulator
+operation, Lua reload or live game mutation was performed. Text encoding and
+diff checks passed. The next step is user review after they reopen the app;
+this agent will not launch another GUI instance.
+
 # Restore SuperAstra logo and 2.0 branding
 
 Restore the original PNG logo in the header with a gold 2.0 label, replacing

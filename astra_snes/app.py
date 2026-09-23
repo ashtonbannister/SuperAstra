@@ -33,6 +33,7 @@ class App:
         self.running_mode = None
         self._work_speaker = "Codex"
         self._closing = False
+        self._last_bridge_session = None
         self.status = tk.StringVar(value="NO CARTRIDGE CONNECTED")
         self.activity = tk.StringVar(value="Ready when you are.")
         from tkinter import font as tkfont
@@ -304,6 +305,11 @@ class App:
         try:
             state = self.bridge.heartbeat()
             self.status.set("Connected: " + state["title"] + f"   |   Undo: {state['undo_count']}   |   Effects: {state['hold_count'] + len(state.get('routines', []))}")
+            session = state.get("session")
+            if session and self._last_bridge_session and session != self._last_bridge_session:
+                self.log("Activity", "BizHawk reconnected. Earlier live effects may be gone. Open Game Knowledge to review saved actions before restoring anything.")
+            if session:
+                self._last_bridge_session = session
             if state.get("last_routine_error"):
                 self.activity.set("An effect stopped: " + state["last_routine_error"])
         except Exception:

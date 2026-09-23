@@ -94,6 +94,7 @@ TOOLS = [
           ("goal", "understanding", "hypotheses", "next_steps", "success_criteria")}),
     tool("search_knowledge", "Search this exact ROM's retained findings, automatic tool evidence, imported source files and memory maps. Use keywords, symbols and addresses; lexical search, not a semantic embedding service.",
          {"query": string("1–300 characters.")}),
+    tool("get_saved_change", "Read one exact saved hack action for this ROM by index from get_context recovery or search_knowledge. Historical evidence only; verify current game state before reusing.", {"index": integer("Saved action index, 0-based.")}),
     tool("read_source", "Read exact numbered lines from an indexed user-provided source file. Use source IDs from the context or search results.",
          {"source_id": string("Source ID."), "start_line": integer("1-based line number."), "line_count": integer("1–200 lines, at most 20000 characters returned.")}),
     tool("stop_cheats", "Stop frame routines and freezes. Empty name stops all. Does not reverse prior writes; Undo rewinds them.",
@@ -149,7 +150,7 @@ class Toolbox:
         self.context = self.rpc("inspect")
         data = dict(self.context)
         data["profile"] = match_profile(data)
-        data["notebook"] = self.notebook.summary() if self.notebook else {}
+        data["notebook"] = self.notebook.summary(self.context) if self.notebook else {}
         try:
             data["cartridge_headers"] = self.ensure_cartridge().headers()
         except (BridgeError, OSError, ValueError) as e:
@@ -169,14 +170,16 @@ class Toolbox:
         try:
             result = self._dispatch(name, args)
         except (RuntimeError, ValueError, OSError, KeyError, TypeError) as e:
-            self.record(name, args, {"error": str(e), "success": False})
+            self.record(name, args, {"error": str(e), "success": False,
+                                     "uncertain": isinstance(e, BridgeError) and
+                                     "No acknowledgement before timeout" in str(e)})
             raise
         self.record(name, args, result)
         return result
 
     def record(self, name, args, result):
         # Avoid recursively journaling the journal and retrieval results.
-        if self.notebook and name not in {"get_context", "search_knowledge", "read_source", "remember", "update_investigation"}:
+        if self.notebook and name not in {"get_context", "search_knowledge", "get_saved_change", "read_source", "remember", "update_investigation"}:
             try:
                 self.notebook.record(name, args, result, self.context)
             except OSError as e:
@@ -297,6 +300,8 @@ class Toolbox:
             return self.notebook.remember(**args)
         elif name == "update_investigation":
             return self.notebook.update_working(**args)
+        elif name == "get_saved_change":
+            return self.notebook.get_change(args["index"])
         elif name == "search_knowledge":
             return self.notebook.search(**args)
         elif name == "read_source":

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import copy
 import hashlib
 from pathlib import Path
 import re
@@ -21,8 +22,59 @@ class GameNotebook:
             "rom_sha1": key, "findings": [], "routines": {}, "user_notes": ""}
         for field, default in (("events", []), ("sources", {}), ("working", {})):
             self.data.setdefault(field, default)
+        # Older notebooks have tool evidence but no durable action index.
+        if "changes" not in self.data:
+            self.data["changes"] = self._legacy_changes()
         self.sources_path = self.path.parent / "sources" / key
         self.investigation_path = self.path.with_suffix(".investigation.json")
+
+    CHANGE_TOOLS = {"apply_bytes", "freeze_bytes", "run_routine", "patch_cartridge",
+                    "smw_spawn", "smw_powerup", "stop_cheats", "undo", "restore_checkpoint"}
+
+    def _legacy_changes(self) -> list[dict]:
+        changes = []
+        for event in self.data.get("events", []):
+            if event.get("tool") not in self.CHANGE_TOOLS:
+                continue
+            try:
+                result = json.loads(event["result"])
+                args = json.loads(event["args"])
+            except (ValueError, KeyError, TypeError):
+                continue
+            if not isinstance(result, dict) or not isinstance(args, dict):
+                continue
+            uncertain = "No acknowledgement before timeout" in str(result.get("error", ""))
+            if ("error" in result or result.get("success") is False) and not uncertain:
+                continue
+            context = event.get("context") or {}
+            changes.append({"tool": event["tool"], "args": args, "time": event.get("time"),
+                            "session": context.get("session"), "epoch": context.get("epoch"),
+                            "status": "uncertain" if uncertain else "acknowledged",
+                            "source": "older tool history"})
+        return changes[-1000:]
+
+    def recovery(self, live: dict) -> dict:
+        prior = [(index, change) for index, change in enumerate(self.data["changes"])
+                 if change.get("session") and change["session"] != live.get("session")]
+        recent = []
+        for index, change in prior[-8:]:
+            args = json.dumps(change.get("args", {}), ensure_ascii=False)
+            recent.append({"index": index, "tool": change["tool"], "session": change["session"],
+                           "epoch": change.get("epoch"), "time": change.get("time"),
+                           "status": change.get("status", "acknowledged"),
+                           "args_excerpt": args[:1800], "truncated": len(args) > 1800})
+        return {"prior_action_count": len(prior),
+                "recent_prior_actions": recent,
+                "notice": ("These are saved actions from earlier bridge sessions. "
+                           "Uncertain actions may or may not have happened; acknowledged "
+                           "actions may have been undone or superseded. None prove what is "
+                           "active now. Recheck ROM, game state and byte guards before "
+                           "proposing or applying any change.") if prior else ""}
+
+    def get_change(self, index: int) -> dict:
+        if type(index) is not int or not 0 <= index < len(self.data["changes"]):
+            raise ValueError("Unknown saved action index for this ROM.")
+        return copy.deepcopy(self.data["changes"][index])
 
     def remember(self, finding: str, evidence: str, confidence: str) -> dict:
         if confidence not in ("hypothesis", "observed", "verified"):
@@ -43,9 +95,10 @@ class GameNotebook:
     def save(self) -> None:
         atomic_json(self.path, self.data)
 
-    def summary(self) -> dict:
+    def summary(self, live: dict | None = None) -> dict:
         return {"findings": self.data["findings"][-16:],
                 "finding_count": len(self.data["findings"]),
+                "recovery": self.recovery(live) if live else {},
                 "saved_routines": list(self.data["routines"]),
                 "user_notes": self.data.get("user_notes", "")[:8000],
                 "sources": list(self.data["sources"].values()),
@@ -63,6 +116,15 @@ class GameNotebook:
             "context": {**{k: (context or {}).get(k) for k in ("session", "epoch", "romhash")},
                         "frame_at_last_inspection": (context or {}).get("frame")}})
         self.data["events"] = self.data["events"][-500:]
+        uncertain = isinstance(result, dict) and result.get("uncertain") is True
+        acknowledged = isinstance(result, dict) and not result.get("error") and result.get("success") is not False
+        if tool in self.CHANGE_TOOLS and (acknowledged or uncertain):
+            self.data["changes"].append({"tool": tool, "args": copy.deepcopy(args),
+                "time": int(time.time()), "session": (context or {}).get("session"),
+                "epoch": (context or {}).get("epoch"),
+                "status": "uncertain" if uncertain else "acknowledged",
+                "source": "saved action"})
+            self.data["changes"] = self.data["changes"][-1000:]
         self.save()
 
     def update_working(self, **fields) -> dict:
@@ -116,6 +178,11 @@ class GameNotebook:
                 candidates.append((score, len(candidates), {"kind": kind, **metadata, "excerpt": text[:2000]}))
         for i, fact in enumerate(self.data["findings"]):
             add("finding", json.dumps(fact, ensure_ascii=False), {"index": i})
+        for i, change in enumerate(self.data["changes"]):
+            raw = json.dumps(change, ensure_ascii=False)
+            for start in range(0, len(raw), 1600):
+                add("saved_action", raw[start:start + 2000],
+                    {"index": i, "tool": change["tool"]})
         for i, event in enumerate(self.data["events"]):
             raw = json.dumps(event, ensure_ascii=False)
             for start in range(0, len(raw), 1600):
