@@ -226,6 +226,7 @@ class App:
         self.agent.cancel.clear()
         self.codex.cancel.clear()
         if mode == "Codex":
+            self.log("Activity", "Requested Codex model: " + self.codex.model)
             self.work(lambda: self.codex.run(prompt, max_rounds=self.max_rounds))
         elif mode == "Astra":
             self.work(lambda: self.agent.run(prompt, max_rounds=self.max_rounds))

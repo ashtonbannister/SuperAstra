@@ -1,3 +1,10 @@
+# Codex model visibility
+
+Show the requested Codex model ID in SESSION LOG for each GUI prompt. This
+reports the app's actual CLI selection without relying on the model's own
+self-description. The Codex transcript for the live F-Zero question recorded
+`gpt-6-sol` for its turn.
+
 # Codex model selection on Windows
 
 Load the visible model IDs from SuperAstra's signed-in Codex app-server into

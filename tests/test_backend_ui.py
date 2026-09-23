@@ -157,6 +157,17 @@ def test_resume_local_does_not_launch_an_ai_backend(ui):
     assert calls == [] and not app.busy
 
 
+def test_codex_prompt_logs_requested_model(ui):
+    app, calls = ui
+    app.codex.model = "gpt-6-sol"
+    app.fill("Which model is selected?")
+    app.send()
+    settle(app)
+    transcript = app.transcript.get("1.0", "end")
+    assert "Requested Codex model: gpt-6-sol" in transcript
+    assert calls == [("Codex", "Which model is selected?", 32)]
+
+
 def test_reply_label_uses_running_backend_not_later_selection(ui):
     app, calls = ui
     app.send()

@@ -38,7 +38,7 @@ Launch SuperAstra with this virtual-environment Python, not a different global i
 
 The executable field can remain blank to find an installed CLI on PATH. Alternatively, enter an absolute path to `codex.exe`. It is a file path, not a command with flags. For standard npm installations, the official `codex.cmd` shim is resolved to the packaged native `codex.exe`; the batch file is not executed. Nonstandard installations may require selecting the native executable explicitly. Native Windows Codex runs without a separate console window.
 
-Settings loads a model dropdown from the isolated, signed-in Codex profile. Refresh models retries the lookup without sending a model prompt. The selected model is passed to Codex for the next request. Availability can still change with your account or CLI version. A missing model, expired sign-in, exhausted allowance, or missing dependency produces an error; none switches to API billing.
+Settings loads a model dropdown from the isolated, signed-in Codex profile. Refresh models retries the lookup without sending a model prompt. The selected model is passed to Codex for the next request, and SESSION LOG labels each prompt with the requested model ID. Availability can still change with your account or CLI version. A missing model, expired sign-in, exhausted allowance, or missing dependency produces an error; none switches to API billing.
 
 ## Login, conversations and local data
 
