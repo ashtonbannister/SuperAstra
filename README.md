@@ -6,6 +6,14 @@ A SNES-themed desktop companion that lets Astra investigate and alter a running
 game through natural-language prompts. Built for BizHawk, with an RPG-style
 interface and live memory tools.
 
+### Finding tools
+The left sidebar groups **Assistant**, **Game controls**, and **Knowledge**.
+Use **Settings / Model / Sign-in** for the Codex executable, account and model.
+**Stop assistant** cancels an investigation; **Stop active effects** stops running
+game effects. **Undo last change** uses the existing session undo history.
+**Inspect game** and **Review discoveries** fill a prompt for review; click
+**Send prompt** to run it. The screenshot below shows the earlier layout.
+
 ![SUPERASTRA desktop interface](docs/qa/desktop.png)
 
 The agent can inspect the actual game, find memory structures, write new memory
@@ -29,7 +37,7 @@ an OpenAI API key whose project can use `gpt-6-astra`.
    **Tools → Lua Console**, then open `LOAD-IN-BIZHAWK.lua` from this folder.
 4. Keep emulation running. The companion will show the cartridge name.
 5. Open **Settings**, enter your API key, and leave the model as
-   `gpt-6-astra`. Type what you want and click **Cast prompt**.
+   `gpt-6-astra`. Type what you want and click **Send prompt**.
 
 This runs alongside the desktop emulator. It is not an iPhone emulator extension
 and is not a hosted website. The app requires no Python packages beyond the
@@ -81,7 +89,7 @@ The agent receives:
 | CPU bus write watch | See which registers/code are associated with a write, on supporting cores |
 | Persistent game notebook | Reuse a working plan, hypotheses, evidence, previous routines and automatically recorded tool results |
 | Optional web research | Find disassemblies and memory documentation, then check against the ROM |
-| Searchable source collection | Import full text/source files using **Add context**, then retrieve relevant symbols and numbered lines |
+| Searchable source collection | Import full text/source files using **Import reference files**, then retrieve relevant symbols and numbered lines |
 
 The general path works without a recognized game profile. Astra can create a new
 one-shot routine, an effect that runs each frame, or a guarded patch to code/data
@@ -114,7 +122,7 @@ replays an old mutation. The latest bounded tool transcript and a compact workin
 plan are retained; older tool evidence is searchable. The default is 32 API steps
 per request, adjustable to 1–256 in settings or with `--steps`.
 
-**Add context** accepts multiple UTF-8 source/text files, up to 8 MiB each,
+**Import reference files** accepts multiple UTF-8 source/text files, up to 8 MiB each,
 32 files and 32 MiB total per ROM. Astra searches them locally and requests
 relevant excerpts. Lexical search uses keywords, addresses and symbols. It does
 not upload an entire imported source collection automatically. **Game knowledge** displays the retained plan, recent evidence and available sources.

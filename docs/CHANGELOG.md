@@ -1,3 +1,24 @@
+# SNES tool navigation
+
+Group existing controls in a persistent left sidebar: Assistant, Game controls,
+and Knowledge. Put Settings / Model / Sign-in beside backend selection.
+Replace the old right-side menu and game-specific shortcut buttons with
+descriptive actions and read-only investigation prompt starters. Reduce minimum
+window height to 700 pixels. Existing backend routing, busy guards, settings
+storage and emulator operations are unchanged. No storage migration is required;
+reverting this UI change restores the prior layout.
+
+Checkpoint: built on mcp-codex 4f82036. Removed the predecessor right-side menu,
+large decorative header, and game-specific prompt shortcuts; their action
+handlers remain the single implementation. Preserved the local Codex approval
+configuration without including it in this change.
+Windows verification: backend/UI regression suite 78 passed, 1 Tk display skip;
+final UI suite 12 passed, 1 Tk display skip. Separate real Tk geometry checks
+passed at 1100x800 and 940x700, including sidebar Settings and non-executing
+prompt starters. Fake backends only; no live game mutation or visual screenshot
+review. User visual acceptance remains open. Next step is user review of the
+navigation after reopening the GUI.
+
 # Codex model visibility
 
 Show the requested Codex model ID in SESSION LOG for each GUI prompt. This

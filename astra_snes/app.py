@@ -19,8 +19,8 @@ class App:
     def __init__(self, root: tk.Tk):
         self.root = root
         root.title("SUPERASTRA")
-        root.geometry("920x920")
-        root.minsize(800, 840)
+        root.geometry("1100x800")
+        root.minsize(940, 700)
         root.configure(bg=BG)
         self.events = queue.Queue()
         self.busy = False
@@ -52,7 +52,7 @@ class App:
                         bordercolor="#fff2bf", lightcolor="#fff6d4", darkcolor="#a67b42")
         style.map("Accent.TButton", background=[("active", "#ffe9ad"), ("pressed", "#d3ac65")],
                   foreground=[("disabled", "#766544")])
-        style.configure("Menu.TButton", background=PANEL, anchor="w", padding=(10, 10), borderwidth=0)
+        style.configure("Menu.TButton", background=PANEL, anchor="w", padding=(10, 6), borderwidth=0)
         style.map("Menu.TButton", background=[("active", "#3d4b96"), ("pressed", "#101b51")])
         style.configure("TRadiobutton", background=BG, foreground=MUTED, font=(mono, 9))
         style.map("TRadiobutton", foreground=[("selected", FG)])
@@ -73,29 +73,12 @@ class App:
 
         outer = tk.Frame(root, bg=BG, padx=24, pady=16)
         outer.pack(fill="both", expand=True)
-        header = tk.Canvas(outer, height=138, bg=BG, highlightthickness=0)
-        header.pack(fill="x")
-        # Header pixels are deliberately static: no distracting idle animation on video.
-        for x, y, size, color in [(14, 30, 3, "#7884cb"), (562, 31, 3, "#9a85d1"),
-                                  (577, 91, 2, "#5666a0"), (20, 113, 2, "#5666a0")]:
-            header.create_rectangle(x, y, x + size, y + size, fill=color, outline="")
-        try:
-            self.logo_original = tk.PhotoImage(file=str(ROOT / "assets" / "superastra-logo.png"), format="png")
-            self.logo = self.logo_original.subsample(4, 4)
-            header.create_image(286, 66, image=self.logo)
-        except (tk.TclError, OSError):
-            header.create_text(24, 65, anchor="w", text="SUPERASTRA", fill=FG, font=(mono, 35, "bold"))
-        header.create_text(286, 122, text="Change the game.", fill=MUTED, font=(mono, 10))
-        credit = tk.Frame(header, bg=BG)
-        credit.place(relx=1.0, x=-4, y=20, anchor="ne")
-        try:
-            self.spellbook_logo = tk.PhotoImage(file=str(ROOT / "assets" / "spellbook-logo.png"), format="png")
-            tk.Label(credit, text="Magic by", bg=BG, fg=MUTED, font=(mono, 10)).pack(anchor="e", pady=(0, 5))
-            tk.Label(credit, image=self.spellbook_logo, bg=BG, borderwidth=0).pack(anchor="e")
-        except (tk.TclError, OSError):
-            tk.Label(credit, text="Magic by Spellbook", bg=BG, fg=FG, font=(mono, 10)).pack(anchor="e")
-        settings = ttk.Button(header, text="SETTINGS", command=self.settings)
-        settings.place(relx=1.0, x=-4, y=92, anchor="ne")
+        header = tk.Frame(outer, bg=BG)
+        header.pack(fill="x", pady=(0, 14))
+        tk.Label(header, text="SUPERASTRA", bg=BG, fg=FG,
+                 font=(mono, 24, "bold")).pack(side="left")
+        tk.Label(header, text="SNES workspace  /  Magic by Spellbook", bg=BG,
+                 fg=MUTED, font=(mono, 9)).pack(side="right")
 
         status_frame, status_inner = panel(outer)
         status_frame.pack(fill="x", pady=(0, 12))
@@ -105,54 +88,66 @@ class App:
                                     font=(mono, 10), anchor="w", justify="left", wraplength=640)
         self.status_label.pack(side="left", fill="x", expand=True)
 
-        modes = ttk.Frame(outer)
-        modes.pack(fill="x", pady=(0, 10))
-        self.backend_buttons = []
-        for label, value in (("CODEX / CHATGPT", "Codex"), ("OPENAI API", "Astra"), ("LOCAL SHORTCUTS", "Local")):
-            button = ttk.Radiobutton(modes, text=label, variable=self.mode, value=value)
-            button.pack(side="left", padx=(0, 16))
-            self.backend_buttons.append(button)
-        ttk.Label(modes, text="CTRL + ENTER TO CAST", foreground=MUTED, font=(mono, 9)).pack(side="right", padx=(0, 4))
+        workspace = tk.Frame(outer, bg=BG)
+        workspace.pack(fill="both", expand=True)
+        sidebar_frame, sidebar = panel(workspace)
+        sidebar_frame.pack(side="left", fill="y", padx=(0, 16))
+        sidebar.configure(padx=10)
+        content = tk.Frame(workspace, bg=BG)
+        content.pack(side="left", fill="both", expand=True)
 
-        prompt_frame, prompt_inner = panel(outer)
+        def section(title, description):
+            tk.Label(sidebar, text=title, bg=PANEL, fg=ACCENT,
+                     font=(mono, 10, "bold")).pack(anchor="w", padx=8, pady=(12, 3))
+            tk.Label(sidebar, text=description, bg=PANEL, fg=MUTED,
+                     font=(mono, 9), wraplength=205, justify="left").pack(anchor="w", padx=8, pady=(0, 6))
+
+        section("ASSISTANT", "Choose how to run your prompts.")
+        self.backend_buttons = []
+        for label, value in (("Codex / ChatGPT", "Codex"), ("OpenAI API", "Astra"), ("Local shortcuts", "Local")):
+            button = ttk.Radiobutton(sidebar, text=label, variable=self.mode, value=value)
+            button.pack(anchor="w", padx=8, pady=4)
+            self.backend_buttons.append(button)
+        ttk.Button(sidebar, text="Settings / Model / Sign-in", style="Menu.TButton",
+                   command=self.settings).pack(fill="x", pady=(8, 0))
+        section("GAME CONTROLS", "Manage changes in this session.")
+        for title, action in [
+                ("Undo last change", lambda: self.action("undo", {})),
+                ("Stop active effects", lambda: self.action("stop_cheats", {"name": ""})),
+                ("Continue investigation", self.resume)]:
+            ttk.Button(sidebar, text=title, style="Menu.TButton", command=action).pack(fill="x", pady=1)
+        section("KNOWLEDGE", "Discoveries for the current ROM.")
+        for title, action in [("View game knowledge", self.view_knowledge),
+                              ("Import reference files", self.import_context)]:
+            ttk.Button(sidebar, text=title, style="Menu.TButton", command=action).pack(fill="x", pady=1)
+
+        prompt_frame, prompt_inner = panel(content)
         prompt_frame.pack(fill="x")
         prompt_title = tk.Frame(prompt_inner, bg=PANEL)
         prompt_title.pack(fill="x", pady=(0, 8))
-        tk.Label(prompt_title, text="YOUR COMMAND", bg=PANEL, fg=ACCENT, font=(mono, 11, "bold")).pack(side="left")
-        tk.Label(prompt_title, text="WRITE A LITTLE MAGIC", bg=PANEL, fg="#aab5ed", font=(mono, 9)).pack(side="right")
+        tk.Label(prompt_title, text="ASK SUPERASTRA", bg=PANEL, fg=ACCENT, font=(mono, 11, "bold")).pack(side="left")
+        tk.Label(prompt_title, text="Ctrl + Enter to send", bg=PANEL, fg="#aab5ed", font=(mono, 9)).pack(side="right")
         self.prompt = tk.Text(prompt_inner, height=3, bg=PANEL, fg=FG, insertbackground=ACCENT,
                               insertwidth=3, relief="flat", borderwidth=0, highlightthickness=0,
-                              padx=0, pady=6, font=(mono, 18), wrap="word",
+                              padx=0, pady=6, font=(mono, 13), wrap="word",
                               selectbackground="#6658a5", selectforeground="#ffffff")
         self.prompt.pack(fill="x")
-        self.prompt.insert("1.0", "Drop a star")
+        self.prompt.insert("1.0", "Identify the current game and capture its screen. Read only.")
         self.prompt.bind("<Control-Return>", lambda event: (self.send(), "break")[1])
-        arrow = tk.Canvas(prompt_inner, height=9, bg=PANEL, highlightthickness=0)
-        arrow.pack(fill="x")
-        arrow.bind("<Configure>", lambda e: (arrow.delete("all"), arrow.create_polygon(
-            e.width - 16, 0, e.width - 2, 0, e.width - 9, 7, fill=FG, outline="")))
-
-        row = ttk.Frame(outer)
-        row.pack(fill="x", pady=(12, 16))
-        self.send_button = ttk.Button(row, text="CAST PROMPT", style="Accent.TButton", command=self.send)
+        row = ttk.Frame(content)
+        row.pack(fill="x", pady=(10, 10))
+        self.send_button = ttk.Button(row, text="Send prompt", style="Accent.TButton", command=self.send)
         self.send_button.pack(side="left")
-        ttk.Button(row, text="STOP THINKING", command=self.cancel).pack(side="left", padx=10)
-        for title, prompt in [("DROP A STAR", "Drop a star"), ("5 CHUCKS", "Put 5 chucks on the screen")]:
-            ttk.Button(row, text=title, command=lambda p=prompt: self.fill(p)).pack(side="right", padx=(8, 4))
-
-        lower = tk.Frame(outer, bg=BG)
+        ttk.Button(row, text="Stop assistant", command=self.cancel).pack(side="left", padx=8)
+        ttk.Button(row, text="Clear prompt", command=lambda: self.fill("")).pack(side="right")
+        examples = ttk.Frame(content)
+        examples.pack(fill="x", pady=(0, 12))
+        for title, prompt in [
+                ("Inspect game", "Identify the current game and capture its screen. Read only."),
+                ("Review discoveries", "Summarize saved discoveries for this exact ROM. Read only.")]:
+            ttk.Button(examples, text=title, command=lambda p=prompt: self.fill(p)).pack(side="left", padx=(0, 8))
+        lower = tk.Frame(content, bg=BG)
         lower.pack(fill="both", expand=True)
-        menu_frame, menu_inner = panel(lower)
-        menu_frame.pack(side="right", fill="y", padx=(14, 0))
-        menu_inner.configure(padx=8)
-        tk.Label(menu_inner, text="MENU", bg=PANEL, fg=ACCENT, font=(mono, 11, "bold")).pack(anchor="w", padx=10, pady=(0, 8))
-        for title, action in [("> UNDO", lambda: self.action("undo", {})),
-                              ("> STOP EFFECTS", lambda: self.action("stop_cheats", {"name": ""})),
-                              ("> RESUME", self.resume),
-                              ("> CLEAR PROMPT", lambda: self.fill("")),
-                              ("> GAME KNOWLEDGE", self.view_knowledge),
-                              ("> ADD CONTEXT", self.import_context)]:
-            ttk.Button(menu_inner, text=title, style="Menu.TButton", command=action).pack(fill="x", pady=1)
         log_frame, log_inner = panel(lower)
         log_frame.pack(side="left", fill="both", expand=True)
         tk.Label(log_inner, text="SESSION LOG", bg=PANEL, fg="#b3a0e5", font=(mono, 10, "bold")).pack(anchor="w", pady=(0, 10))
