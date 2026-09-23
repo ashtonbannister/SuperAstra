@@ -131,12 +131,28 @@ class CodexAgent:
         self.directory = state_directory or Path.home() / ".superastra" / install
         self.home = self.directory / "codex"
         self.workspace = self.directory / "workspace"
-        self.executable = ""
+        self.executable = self._load_executable()
         self.model = "gpt-6-astra"
         self.timeout = 1800.0
         self.cancel = threading.Event()
         self._run_lock = threading.Lock()
         self._threads: dict[str, str] = {}
+
+    def _load_executable(self) -> str:
+        try:
+            data = json.loads((self.directory / "settings.json").read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return ""
+        value = data.get("codex_executable") if isinstance(data, dict) else None
+        return value if isinstance(value, str) and len(value) <= 4096 and Path(value).is_absolute() else ""
+
+    def set_executable(self, value: str) -> None:
+        value = value.strip()
+        if value:
+            executable_command(value, root=self.root)
+        private_write(self.directory / "settings.json",
+                      json.dumps({"codex_executable": value}, ensure_ascii=False) + "\n")
+        self.executable = value
 
     def prepare(self) -> None:
         for directory in (self.directory, self.home, self.workspace):
@@ -197,6 +213,87 @@ class CodexAgent:
         output = self._plain_process(self._auth_argv("status"), 15)
         if "chatgpt" not in output.lower():
             raise CodexError("ChatGPT sign-in was not confirmed. Use Settings > Sign in with ChatGPT.")
+
+    def list_models(self) -> list[str]:
+        """Read visible model IDs from this installation's signed-in Codex profile."""
+        with self._exclusive():
+            self._check_login()
+            argv = executable_command(self.executable, root=self.root) + [
+                "app-server", "--stdio", "--strict-config",
+                "-c", 'forced_login_method="chatgpt"',
+                "-c", 'model_provider="openai"']
+            process = self._spawn(argv, stdin=subprocess.PIPE)
+            lines: queue.Queue[bytes] = queue.Queue()
+
+            def read_stdout():
+                for line in process.stdout:
+                    lines.put(line)
+
+            threading.Thread(target=read_stdout, daemon=True).start()
+            deadline = time.monotonic() + 20
+
+            def send(message: dict) -> None:
+                process.stdin.write((json.dumps(message, separators=(",", ":")) + "\n").encode("utf-8"))
+                process.stdin.flush()
+
+            def receive(request_id: int) -> dict:
+                while time.monotonic() < deadline:
+                    if self.cancel.is_set():
+                        raise CodexError("Stopped while loading Codex models.")
+                    try:
+                        line = lines.get(timeout=min(0.2, max(0.01, deadline - time.monotonic())))
+                    except queue.Empty:
+                        if process.poll() is not None:
+                            break
+                        continue
+                    if len(line) > 1024 * 1024:
+                        raise CodexError("Codex returned an oversized model list.")
+                    try:
+                        message = json.loads(line)
+                    except ValueError:
+                        raise CodexError("Codex returned an invalid model-list response.") from None
+                    if message.get("id") == request_id:
+                        if "error" in message:
+                            raise CodexError("Codex could not list models for this ChatGPT sign-in.")
+                        return message.get("result", {})
+                raise CodexError("Codex model listing timed out or exited unexpectedly.")
+
+            try:
+                send({"id": 1, "method": "initialize", "params": {
+                    "clientInfo": {"name": "superastra", "version": "0.1.0"}, "capabilities": {}}})
+                receive(1)
+                send({"method": "initialized", "params": {}})
+                models: list[str] = []
+                cursor = None
+                for request_id in range(2, 6):
+                    params = {"limit": 100, "includeHidden": False}
+                    if cursor is not None:
+                        params["cursor"] = cursor
+                    send({"id": request_id, "method": "model/list", "params": params})
+                    result = receive(request_id)
+                    data = result.get("data")
+                    if not isinstance(data, list):
+                        raise CodexError("Codex returned an invalid model list.")
+                    for entry in data:
+                        model = entry.get("id") if isinstance(entry, dict) else None
+                        if isinstance(model, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,99}", model) and model not in models:
+                            models.append(model)
+                    cursor = result.get("nextCursor")
+                    if cursor is None:
+                        break
+                    if not isinstance(cursor, str) or len(cursor) > 512:
+                        raise CodexError("Codex returned an invalid model-list cursor.")
+                if not models:
+                    raise CodexError("Codex reported no available models for this sign-in.")
+                return models
+            finally:
+                process.stdin.close()
+                try:
+                    process.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    self._kill_tree(process)
+                process.stdout.close()
+                process.stderr.close()
 
     def _spawn(self, argv: list[str], *, stdin=subprocess.DEVNULL):
         options = {"creationflags": subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP} \

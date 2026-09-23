@@ -35,6 +35,15 @@ def agent(tmp_path, monkeypatch):
 import json, os, sys, time
 from pathlib import Path
 home = Path(os.environ["CODEX_HOME"])
+if "app-server" in sys.argv:
+    for line in sys.stdin:
+        request = json.loads(line)
+        if request.get("id") == 1:
+            print(json.dumps({"id": 1, "result": {"serverInfo": {"name": "fake", "version": "1"}}}), flush=True)
+        elif request.get("method") == "model/list":
+            print(json.dumps({"id": request["id"], "result": {"data": [
+                {"id": "gpt-6-astra"}, {"id": "gpt-6-sol"}], "nextCursor": None}}), flush=True)
+    sys.exit(0)
 if "login" in sys.argv:
     if (home / "login-fail").exists():
         print("private-secret-never-display", file=sys.stderr)
@@ -153,6 +162,13 @@ def test_user_prompt_is_only_stdin_not_argv(agent, monkeypatch):
     assert not list(agent.directory.glob("instructions-*.md"))
 
 
+def test_model_list_and_selected_model_reaches_codex_command(agent):
+    assert agent.list_models() == ["gpt-6-astra", "gpt-6-sol"]
+    agent.model = "gpt-6-sol"
+    agent.run("read only")
+    assert capture(agent)["args"][capture(agent)["args"].index("--model") + 1] == "gpt-6-sol"
+
+
 def test_resume_is_explicit_and_per_rom_and_model(agent):
     agent.run("first")
     assert "resume" not in capture(agent)["args"]
@@ -189,6 +205,19 @@ def test_cancel_before_start_does_not_launch(agent):
     with pytest.raises(CodexError, match="Stopped before"):
         agent.run("do not launch")
     assert not agent.directory.exists()
+
+
+def test_selected_codex_executable_survives_restart_without_credentials(agent, tmp_path):
+    executable = tmp_path / "codex.exe"
+    executable.touch()
+    executable.chmod(0o700)
+    agent.set_executable(str(executable))
+    saved = json.loads((agent.directory / "settings.json").read_text(encoding="utf-8"))
+    assert saved == {"codex_executable": str(executable)}
+    restarted = CodexAgent(agent.bridge, "instructions", root=agent.root,
+                           state_directory=agent.directory)
+    assert restarted.executable == str(executable)
+    assert not (agent.home / "auth.json").exists()
 
 
 def test_login_failure_never_sends_prompt_or_falls_back(agent):

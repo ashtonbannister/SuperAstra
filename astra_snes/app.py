@@ -8,7 +8,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from .agent import AstraAgent, INSTRUCTIONS
-from .codex_agent import CodexAgent
+from .codex_agent import CodexAgent, CodexError
 from .toolbox import Toolbox
 from .transport import Bridge, ROOT
 
@@ -320,7 +320,13 @@ class App:
             return widget
 
         cli = entry(codex_frame, "Codex executable (blank = find installed Codex; no command-line flags)", self.codex.executable)
-        codex_model = entry(codex_frame, "Codex model", self.codex.model)
+        ttk.Label(codex_frame, text="Codex model (from this ChatGPT sign-in)").pack(anchor="w")
+        codex_model = ttk.Combobox(codex_frame, state="readonly", width=59,
+                                   values=[self.codex.model])
+        codex_model.set(self.codex.model)
+        codex_model.pack(fill="x", pady=(4, 4))
+        model_status = tk.StringVar(value="Loading available models…")
+        ttk.Label(codex_frame, textvariable=model_status, foreground=MUTED).pack(anchor="w")
         minutes = entry(codex_frame, "Maximum minutes per Codex request (1-120)", int(self.codex.timeout / 60))
         ttk.Label(codex_frame, text="Type in this window; Codex CLI runs in the background.\n"
                   "Sign-in uses a separate SuperAstra Codex profile, even if your regular Codex is logged in.\n"
@@ -351,8 +357,12 @@ class App:
             except ValueError:
                 messagebox.showerror("Request limits", "Use 1-256 steps and 1-120 minutes.", parent=dialog)
                 return False
+            try:
+                self.codex.set_executable(cli.get())
+            except (OSError, ValueError, CodexError) as exc:
+                messagebox.showerror("Codex executable", str(exc), parent=dialog)
+                return False
             self.max_rounds = budget
-            self.codex.executable = cli.get().strip()
             self.codex.model = codex_model.get().strip() or "gpt-6-astra"
             self.codex.timeout = duration * 60
             self.agent.api_key = key.get().strip()
@@ -366,6 +376,42 @@ class App:
                 dialog.destroy()
                 self.work(operation, backend="Codex")
 
+        def refresh_models():
+            try:
+                self.codex.set_executable(cli.get())
+            except (OSError, ValueError, CodexError) as exc:
+                model_status.set("Model list unavailable: " + str(exc))
+                return
+            model_status.set("Loading available models…")
+            results = queue.Queue()
+
+            def load():
+                try:
+                    results.put((self.codex.list_models(), None))
+                except (OSError, ValueError, CodexError) as exc:
+                    results.put((None, str(exc)))
+
+            threading.Thread(target=load, daemon=True).start()
+
+            def show_result():
+                if not dialog.winfo_exists():
+                    return
+                try:
+                    models, error = results.get_nowait()
+                except queue.Empty:
+                    dialog.after(100, show_result)
+                    return
+                if error:
+                    model_status.set("Model list unavailable: " + error)
+                    return
+                previous = codex_model.get()
+                codex_model.configure(values=models)
+                codex_model.set(previous if previous in models else models[0])
+                model_status.set(f"{len(models)} models available for this sign-in.")
+
+            dialog.after(100, show_result)
+
+        ttk.Button(codex_frame, text="Refresh models", command=refresh_models).pack(anchor="w", pady=(4, 8))
         actions = ttk.Frame(codex_frame)
         actions.pack(fill="x", pady=(16, 0))
         ttk.Button(actions, text="Sign in with ChatGPT", command=lambda: codex_action(self.codex.login)).pack(side="left")
@@ -376,6 +422,7 @@ class App:
             if apply_values():
                 dialog.destroy()
         ttk.Button(footer, text="Apply settings", command=apply, style="Accent.TButton").pack(anchor="e")
+        dialog.after(0, refresh_models)
 
     def import_context(self):
         if self.busy:

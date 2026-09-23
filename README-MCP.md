@@ -30,7 +30,7 @@ py -m venv .venv
 .\.venv\Scripts\python.exe run.py
 ```
 
-Launch SuperAstra with this virtual-environment Python, not a different global interpreter. Its MCP subprocess uses the same Python and needs the MCP dependencies installed there. The original `Start-Windows.cmd` launcher has not been rewritten.
+Launch SuperAstra with this virtual-environment Python, not a different global interpreter. Its MCP subprocess uses the same Python and needs the MCP dependencies installed there. The `Start-Windows.cmd` launcher uses the project virtual environment when present.
 
 1. In SuperAstra, open **SETTINGS -> Codex / ChatGPT -> Sign in with ChatGPT**. Finish the browser login. **Check sign-in** verifies it without sending a model request.
 2. Open a SNES ROM in BizHawk. Keep the emulator running/unpaused. In **Tools -> Lua Console**, load `LOAD-IN-BIZHAWK.lua` from this same checkout. On the first run, launch SuperAstra before loading Lua so the IPC configuration exists.
@@ -38,7 +38,7 @@ Launch SuperAstra with this virtual-environment Python, not a different global i
 
 The executable field can remain blank to find an installed CLI on PATH. Alternatively, enter an absolute path to `codex.exe`. It is a file path, not a command with flags. For standard npm installations, the official `codex.cmd` shim is resolved to the packaged native `codex.exe`; the batch file is not executed. Nonstandard installations may require selecting the native executable explicitly. Native Windows Codex runs without a separate console window.
 
-The Codex model is configurable in Settings. Its availability still depends on your account. A missing model, expired sign-in, exhausted allowance, or missing dependency produces an error; none switches to API billing.
+Settings loads a model dropdown from the isolated, signed-in Codex profile. Refresh models retries the lookup without sending a model prompt. The selected model is passed to Codex for the next request. Availability can still change with your account or CLI version. A missing model, expired sign-in, exhausted allowance, or missing dependency produces an error; none switches to API billing.
 
 ## Login, conversations and local data
 
@@ -59,7 +59,7 @@ Prompts, requested game data, notebook excerpts and screenshots are still sent t
 
 These controls reduce risk; they are not a claim that arbitrary local software is sandboxed. The installed Codex executable, Python code, MCP server, BizHawk and Lua bridge are trusted programs running as your user. The MCP server intentionally writes game state and local notebook/IPC files outside Codex's read-only host-command sandbox. Local filesystem permissions, OS-specific process cleanup and the underlying software still matter. A full live Windows test is required before calling the integration end-to-end verified.
 
-The Codex path disables built-in web research in this first pass. Use **ADD CONTEXT** to provide trusted reference files; the original API backend retains its separate web-search option. Settings remain in memory for this app session; Codex sign-in and the thread index persist.
+The Codex path disables built-in web research in this first pass. Use **ADD CONTEXT** to provide trusted reference files; the original API backend retains its separate web-search option. The selected Codex executable path persists in SuperAstra's installation-specific private settings file. Other Settings values remain in memory for this app session; Codex sign-in and the thread index persist.
 
 ## Use the MCP server from another host
 

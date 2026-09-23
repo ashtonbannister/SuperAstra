@@ -1,3 +1,17 @@
+# Codex model selection on Windows
+
+Load the visible model IDs from SuperAstra's signed-in Codex app-server into
+a Settings dropdown. Refresh without sending a model prompt, preserve the
+current choice when it remains available, and pass that choice to the next
+Codex request. Keep API model settings separate.
+
+# Codex executable selection on Windows
+
+Remember the user-selected Codex executable path across SuperAstra restarts in
+installation-specific metadata. Validate it before saving; do not store API keys
+or copy Codex credentials. This fixes the missing CLI after a restart when the
+Windows desktop PATH does not include Codex.
+
 # Windows project setup
 
 Use the project virtual environment when launching from `Start-Windows.cmd`,

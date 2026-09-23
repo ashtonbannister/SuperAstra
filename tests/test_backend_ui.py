@@ -28,6 +28,18 @@ def ui(monkeypatch):
             calls.append(("API", prompt, max_rounds))
             return "API result"
 
+    class FakeCodexAgent:
+        def __init__(self, bridge, instructions, progress):
+            self.cancel = threading.Event()
+            self.executable = ""
+            self.model = "gpt-6-astra"
+            self.timeout = 1800
+            self.home = ROOT
+        def set_executable(self, value):
+            self.executable = value.strip()
+        def list_models(self):
+            return ["gpt-6-astra", "gpt-6-sol"]
+
     class FakeToolbox:
         def __init__(self, bridge, progress):
             self.notebook = types.SimpleNamespace(summary=lambda: {"notes": []})
@@ -46,6 +58,7 @@ def ui(monkeypatch):
 
     for name, values in {
         "astra_snes.agent": {"AstraAgent": FakeAgent, "INSTRUCTIONS": "test instructions"},
+        "astra_snes.codex_agent": {"CodexAgent": FakeCodexAgent, "CodexError": RuntimeError},
         "astra_snes.toolbox": {"Toolbox": FakeToolbox},
         "astra_snes.transport": {"Bridge": FakeBridge, "ROOT": ROOT},
     }.items():
@@ -167,4 +180,28 @@ def test_settings_opens_separate_backend_tabs(ui):
     assert len(notebooks) == 1
     labels = [notebooks[0].tab(tab, "text") for tab in notebooks[0].tabs()]
     assert labels == ["Codex / ChatGPT", "OpenAI API (separate billing)"]
+    assert calls == []
+
+
+def test_model_dropdown_uses_signed_in_catalog_and_selection(ui):
+    app, calls = ui
+    app.settings()
+    from tkinter import ttk
+    def widgets(parent):
+        for child in parent.winfo_children():
+            yield child
+            yield from widgets(child)
+    deadline = time.monotonic() + 3
+    while time.monotonic() < deadline:
+        app.root.update()
+        combos = [w for w in widgets(app.root) if isinstance(w, ttk.Combobox)]
+        if combos and len(combos[0].cget("values")) == 2:
+            break
+        time.sleep(0.01)
+    assert combos[0].cget("values") == ("gpt-6-astra", "gpt-6-sol")
+    combos[0].set("gpt-6-sol")
+    apply_buttons = [w for w in widgets(app.root) if isinstance(w, ttk.Button)
+                     and w.cget("text") == "Apply settings"]
+    apply_buttons[0].invoke()
+    assert app.codex.model == "gpt-6-sol"
     assert calls == []
