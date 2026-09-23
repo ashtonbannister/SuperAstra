@@ -1,3 +1,13 @@
+# Restore SuperAstra logo and 2.0 branding
+
+Restore the original PNG logo in the header with a gold 2.0 label, replacing
+the temporary text-only branding. Preserve the sidebar and knowledge browser.
+Increase minimum window height to 780 pixels to accommodate the artwork.
+Built on e26db31; no data or settings migration. User-local approval setting
+remains excluded.
+Windows Tk checks: original logo loads and all controls fit at 1100x860 and
+940x780. Encoding and diff checks passed; user visual review remains pending.
+
 # Knowledge highlights and follow-up prompts
 
 Replace the Game Knowledge raw JSON log output with a searchable selection window.

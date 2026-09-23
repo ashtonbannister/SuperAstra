@@ -19,8 +19,8 @@ class App:
     def __init__(self, root: tk.Tk):
         self.root = root
         root.title("SUPERASTRA")
-        root.geometry("1100x800")
-        root.minsize(940, 700)
+        root.geometry("1100x860")
+        root.minsize(940, 780)
         root.configure(bg=BG)
         self.events = queue.Queue()
         self.busy = False
@@ -75,8 +75,15 @@ class App:
         outer.pack(fill="both", expand=True)
         header = tk.Frame(outer, bg=BG)
         header.pack(fill="x", pady=(0, 14))
-        tk.Label(header, text="SUPERASTRA", bg=BG, fg=FG,
-                 font=(mono, 24, "bold")).pack(side="left")
+        try:
+            self.logo_original = tk.PhotoImage(file=str(ROOT / "assets" / "superastra-logo.png"), format="png")
+            self.logo = self.logo_original.subsample(7, 7)
+            tk.Label(header, image=self.logo, bg=BG, borderwidth=0).pack(side="left")
+        except (tk.TclError, OSError):
+            tk.Label(header, text="SUPERASTRA", bg=BG, fg=FG,
+                     font=(mono, 24, "bold")).pack(side="left")
+        tk.Label(header, text="2.0", bg=BG, fg=ACCENT,
+                 font=(mono, 24, "bold")).pack(side="left", padx=(8, 0))
         tk.Label(header, text="SNES workspace  /  Magic by Spellbook", bg=BG,
                  fg=MUTED, font=(mono, 9)).pack(side="right")
 
