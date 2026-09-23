@@ -1,3 +1,31 @@
+# Codex model visibility
+
+Show the requested Codex model ID in SESSION LOG for each GUI prompt. This
+reports the app's actual CLI selection without relying on the model's own
+self-description. The Codex transcript for the live F-Zero question recorded
+`gpt-6-sol` for its turn.
+
+# Codex model selection on Windows
+
+Load the visible model IDs from SuperAstra's signed-in Codex app-server into
+a Settings dropdown. Refresh without sending a model prompt, preserve the
+current choice when it remains available, and pass that choice to the next
+Codex request. Keep API model settings separate.
+
+# Codex executable selection on Windows
+
+Remember the user-selected Codex executable path across SuperAstra restarts in
+installation-specific metadata. Validate it before saving; do not store API keys
+or copy Codex credentials. This fixes the missing CLI after a restart when the
+Windows desktop PATH does not include Codex.
+
+# Windows project setup
+
+Use the project virtual environment when launching from `Start-Windows.cmd`,
+so the Codex/MCP backend runs with the installed Python and dependencies. Enable
+UTF-8 mode for Windows console diagnostics. Make the Codex environment test
+expect the host platform's path format and ignore local build files.
+
 # v0.3.2 — GitHub preparation
 
 Shortened the tagline to "Change the game." Refreshed the README and desktop
