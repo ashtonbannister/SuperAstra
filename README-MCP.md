@@ -61,6 +61,12 @@ These controls reduce risk; they are not a claim that arbitrary local software i
 
 The Codex path disables built-in web research in this first pass. Use **ADD CONTEXT** to provide trusted reference files; the original API backend retains its separate web-search option. The selected Codex executable path persists in SuperAstra's installation-specific private settings file. Other Settings values remain in memory for this app session; Codex sign-in and the thread index persist.
 
+## Personal ChatGPT plugin
+
+See [personal plugin setup](docs/PERSONAL-CHATGPT-PLUGIN.md) for a private
+Secure MCP Tunnel connection. The server's --personal-plugin mode owns the bridge
+exclusively while running, preventing competing desktop/stdio RPC commands.
+
 ## Use the MCP server from another host
 
 The standalone MCP route remains available. It is optional, not needed for the GUI workflow. Configure a local stdio server with your virtual-environment Python and the absolute path to `mcp_server.py`:

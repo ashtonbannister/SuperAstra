@@ -147,7 +147,7 @@ class GameNotebook:
         if key not in sources and (len(sources) >= 32 or sum(s["bytes"] for s in sources.values()) + len(raw) > 32 * 1024 * 1024):
             raise ValueError("This ROM already has the maximum 32 sources or 32 MiB of source text.")
         self.sources_path.mkdir(parents=True, exist_ok=True)
-        (self.sources_path / (key + ".txt")).write_text(text, encoding="utf-8")
+        (self.sources_path / (key + ".txt")).write_bytes(text.encode("utf-8"))
         sources[key] = {"id": key, "name": path.name, "bytes": len(raw), "lines": len(text.splitlines())}
         self.save()
         return {"message": "Indexed " + path.name + " for this ROM. Astra can search it and read exact lines.", **sources[key]}

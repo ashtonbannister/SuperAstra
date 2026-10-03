@@ -1,0 +1,26 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "superastra",
+  "version": "0.1.0",
+  "description": "Personal SNES game investigation and control through a local BizHawk bridge.",
+  "author": {
+    "name": "Ashton"
+  },
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "SuperAstra",
+        "shortDescription": "Inspect and change your running SNES game.",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "defaultPrompt": [
+          "Inspect my running game and show the screen.",
+          "Review discoveries for this game."
+        ],
+        "logo": "./assets/superastra-logo.png"
+      }
+    }
+  }
+}
