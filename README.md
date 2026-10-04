@@ -6,6 +6,23 @@ A SNES-themed desktop companion that lets Astra investigate and alter a running
 game through natural-language prompts. Built for BizHawk, with an RPG-style
 interface and live memory tools.
 
+### Knowledge highlights
+**View game knowledge** opens a searchable list of saved findings, confidence
+labels, working notes, routines and references for the connected ROM. Select a
+highlight to read its full evidence, or select several with Ctrl / Shift.
+**Add to prompt** appends the selected records and ROM identity to your current
+draft. Add your follow-up and send it when ready. This does not execute saved
+routines or apply modifications. Saved confidence labels describe prior evidence,
+not necessarily the current emulator state.
+
+### Finding tools
+The left sidebar groups **Assistant**, **Game controls**, and **Knowledge**.
+Use **Settings / Model / Sign-in** for the Codex executable, account and model.
+**Stop assistant** cancels an investigation; **Stop active effects** stops running
+game effects. **Undo last change** uses the existing session undo history.
+**Inspect game** and **Review discoveries** fill a prompt for review; click
+**Send prompt** to run it. The screenshot below shows the earlier layout.
+
 ![SUPERASTRA desktop interface](docs/qa/desktop.png)
 
 The agent can inspect the actual game, find memory structures, write new memory
@@ -29,7 +46,7 @@ an OpenAI API key whose project can use `gpt-6-astra`.
    **Tools → Lua Console**, then open `LOAD-IN-BIZHAWK.lua` from this folder.
 4. Keep emulation running. The companion will show the cartridge name.
 5. Open **Settings**, enter your API key, and leave the model as
-   `gpt-6-astra`. Type what you want and click **Cast prompt**.
+   `gpt-6-astra`. Type what you want and click **Send prompt**.
 
 This runs alongside the desktop emulator. It is not an iPhone emulator extension
 and is not a hosted website. The app requires no Python packages beyond the
@@ -81,7 +98,7 @@ The agent receives:
 | CPU bus write watch | See which registers/code are associated with a write, on supporting cores |
 | Persistent game notebook | Reuse a working plan, hypotheses, evidence, previous routines and automatically recorded tool results |
 | Optional web research | Find disassemblies and memory documentation, then check against the ROM |
-| Searchable source collection | Import full text/source files using **Add context**, then retrieve relevant symbols and numbered lines |
+| Searchable source collection | Import full text/source files using **Import reference files**, then retrieve relevant symbols and numbered lines |
 
 The general path works without a recognized game profile. Astra can create a new
 one-shot routine, an effect that runs each frame, or a guarded patch to code/data
@@ -114,10 +131,26 @@ replays an old mutation. The latest bounded tool transcript and a compact workin
 plan are retained; older tool evidence is searchable. The default is 32 API steps
 per request, adjustable to 1–256 in settings or with `--steps`.
 
-**Add context** accepts multiple UTF-8 source/text files, up to 8 MiB each,
+**Import reference files** accepts multiple UTF-8 source/text files, up to 8 MiB each,
 32 files and 32 MiB total per ROM. Astra searches them locally and requests
 relevant excerpts. Lexical search uses keywords, addresses and symbols. It does
 not upload an entire imported source collection automatically. **Game knowledge** displays the retained plan, recent evidence and available sources.
+
+## Reconnecting after a lost emulator bridge
+
+Successful hack actions are saved in the per-ROM notebook with their exact
+arguments, bridge session and state epoch. **View game knowledge** lists them
+as **Past action** highlights, with search and **Add to prompt**. The assistant's
+game context includes a bounded recent-action recovery summary; it can search
+older saved actions and fetch exact arguments when needed. Existing notebooks
+also recover successful actions from retained tool evidence.
+
+Reconnecting to a new Lua bridge clears its in-memory ROM patches, freezes,
+routines, Undo and checkpoints. Saved actions describe what was done before;
+they do not prove that an effect is active or that replay is safe in the
+current scene. Recheck the loaded ROM, game mode and expected bytes before
+reapplying anything. A dropped acknowledgement is saved as an **uncertain action**;
+inspect the game before repeating it. Game Knowledge does not auto-apply actions.
 
 ## Undo and ongoing effects
 

@@ -1,3 +1,100 @@
+# Reconnect recovery from saved hack actions
+
+Index acknowledged memory, cartridge, freeze and routine actions in the existing
+ROM notebook. Label timed-out acknowledgements uncertain. Surface previous-session actions to the assistant and Game Knowledge;
+allow exact retrieval by action index. Recover older actions from retained tool
+events. Explain bridge-session loss in the GUI and guide reassessment of current
+bytes and game state. The predecessor raw-event-only recovery path is superseded
+for new actions; historical tool events remain for evidence and older notebooks.
+No automatic replay, storage migration or Lua reload. Reverting code leaves the
+optional action index harmless in the notebook. The user's local Codex approval
+configuration remains uncommitted.
+
+Checkpoint from 2875767: Windows fake-backend checks passed 85 tests with one
+temporary Tk display skip; that test passed on a targeted rerun. Three focused
+recovery tests passed. The optional Lua suite could not collect because Lupa
+is absent from the project environment. A read-only inspection of the user's
+F-Zero notebook found 25 earlier-session actions; a stale heartbeat snapshot
+reported no active effects, so live state remains unverified. No emulator
+operation, Lua reload or live game mutation was performed. Text encoding and
+diff checks passed. The next step is user review after they reopen the app;
+this agent will not launch another GUI instance.
+
+# Restore SuperAstra logo and 2.0 branding
+
+Restore the original PNG logo in the header with a gold 2.0 label, replacing
+the temporary text-only branding. Preserve the sidebar and knowledge browser.
+Increase minimum window height to 780 pixels to accommodate the artwork.
+Built on e26db31; no data or settings migration. User-local approval setting
+remains excluded.
+Windows Tk checks: original logo loads and all controls fit at 1100x860 and
+940x780. Encoding and diff checks passed; user visual review remains pending.
+
+# Knowledge highlights and follow-up prompts
+
+Replace the Game Knowledge raw JSON log output with a searchable selection window.
+Show all retained findings, confidence and evidence, working notes, routines and
+reference metadata from the existing notebook. Add selected records and exact ROM
+identity to an editable prompt without sending it. Preserve the existing draft.
+The notebook remains the sole storage authority; no migration or new persisted
+schema. The old raw-dump UI route is removed; the bounded notebook summary remains
+in use by agent context. Reverting restores the old display without data changes.
+Built on mcp-codex 3104b4d; user-local Codex approval configuration is excluded.
+Windows Tk verification: 14 tests passed, one temporary display skip; that skipped
+selection/filter/prompt test passed on its targeted rerun. All 15 UI tests therefore
+ran successfully. Tests use fake backends, including full-notebook retrieval beyond
+the 16-finding agent summary. No live game mutations. Encoding and diff checks
+passed. Visual acceptance remains for user review after reopening the GUI.
+
+# SNES tool navigation
+
+Group existing controls in a persistent left sidebar: Assistant, Game controls,
+and Knowledge. Put Settings / Model / Sign-in beside backend selection.
+Replace the old right-side menu and game-specific shortcut buttons with
+descriptive actions and read-only investigation prompt starters. Reduce minimum
+window height to 700 pixels. Existing backend routing, busy guards, settings
+storage and emulator operations are unchanged. No storage migration is required;
+reverting this UI change restores the prior layout.
+
+Checkpoint: built on mcp-codex 4f82036. Removed the predecessor right-side menu,
+large decorative header, and game-specific prompt shortcuts; their action
+handlers remain the single implementation. Preserved the local Codex approval
+configuration without including it in this change.
+Windows verification: backend/UI regression suite 78 passed, 1 Tk display skip;
+final UI suite 12 passed, 1 Tk display skip. Separate real Tk geometry checks
+passed at 1100x800 and 940x700, including sidebar Settings and non-executing
+prompt starters. Fake backends only; no live game mutation or visual screenshot
+review. User visual acceptance remains open. Next step is user review of the
+navigation after reopening the GUI.
+
+# Codex model visibility
+
+Show the requested Codex model ID in SESSION LOG for each GUI prompt. This
+reports the app's actual CLI selection without relying on the model's own
+self-description. The Codex transcript for the live F-Zero question recorded
+`gpt-6-sol` for its turn.
+
+# Codex model selection on Windows
+
+Load the visible model IDs from SuperAstra's signed-in Codex app-server into
+a Settings dropdown. Refresh without sending a model prompt, preserve the
+current choice when it remains available, and pass that choice to the next
+Codex request. Keep API model settings separate.
+
+# Codex executable selection on Windows
+
+Remember the user-selected Codex executable path across SuperAstra restarts in
+installation-specific metadata. Validate it before saving; do not store API keys
+or copy Codex credentials. This fixes the missing CLI after a restart when the
+Windows desktop PATH does not include Codex.
+
+# Windows project setup
+
+Use the project virtual environment when launching from `Start-Windows.cmd`,
+so the Codex/MCP backend runs with the installed Python and dependencies. Enable
+UTF-8 mode for Windows console diagnostics. Make the Codex environment test
+expect the host platform's path format and ignore local build files.
+
 # v0.3.2 — GitHub preparation
 
 Shortened the tagline to "Change the game." Refreshed the README and desktop

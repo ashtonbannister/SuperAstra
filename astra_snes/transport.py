@@ -11,6 +11,9 @@ import secrets
 import threading
 import time
 import uuid
+from contextlib import nullcontext
+
+from .controller import ControllerLease
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -39,6 +42,7 @@ class Bridge:
         self.directory.mkdir(parents=True, exist_ok=True)
         self.timeout = timeout
         self.lock = threading.Lock()
+        self.controller = None
         config_path = self.directory / "config.json"
         if not config_path.exists():
             atomic_json(config_path, {"protocol": 1, "token": secrets.token_hex(32)})
@@ -63,7 +67,7 @@ class Bridge:
 
     def rpc(self, op: str, args: dict | None = None, context: dict | None = None) -> dict:
         """Never retry a timed-out mutation: it might already have committed."""
-        with self.lock:
+        with self.lock, (nullcontext() if self.controller is not None else ControllerLease(self.directory)):
             lease = self.directory / "client.lock"
             try:
                 fd = os.open(lease, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)

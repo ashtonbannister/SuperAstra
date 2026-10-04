@@ -23,6 +23,13 @@ next steps and success criteria. Tool evidence is recorded automatically, with
 bounded excerpts and session/epoch provenance. A notebook retains up to 1000
 findings and 500 events; the latest few appear in the initial context, and the
 rest can be searched. No result is automatically promoted to a verified fact.
+ Successful mutation actions are also indexed as exact, ROM-bound
+records in the same notebook. Timed-out mutation acknowledgements are indexed
+as uncertain actions. Old notebooks derive the index from retained tool events
+on load. The index is chronological history, not an active
+overlay model: Undo, checkpoint restoration, elapsed routine frames and external
+state loads can supersede prior actions. get_context reports earlier-session
+actions and get_saved_change retrieves one exact record for guarded review.
 
 The API loop preserves complete tool-call cycles and encrypted reasoning items.
 It trims old complete cycles to a text budget around 140,000 characters and at

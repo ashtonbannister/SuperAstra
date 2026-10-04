@@ -56,6 +56,11 @@ CONTEXT AND INVESTIGATION
   and emulator sources. Cross-check against this ROM's bytes and observed state.
   Full cartridge/RAM dumps stay local; request useful windows instead of dumping
   thousands of irrelevant bytes into the conversation.
+- If get_context reports prior actions after a bridge reconnect, read them and
+  saved findings before asking the user to repeat prior work. Use
+  get_saved_change for exact earlier arguments when needed. Explain that the
+  previous session's live effects were cleared. Do not assume past actions are
+  active or replay them without checking current bytes, game state and guards.
 - The ROM notebook records hypotheses separately from observations and verified
   facts. Read saved routines and reassess them in the current level/game mode.
 
